@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    // User-owned records: production code should validate every field and allowed transition.
+    match /users/{uid} { allow read, write: if isOwner(uid); }
+    match /vehicles/{id} { allow read, create, update, delete: if signedIn() && request.resource.data.ownerUid == request.auth.uid; }
+    match /bookings/{id} { allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid; allow read: if signedIn() && resource.data.ownerUid == request.auth.uid; allow update: if signedIn() && resource.data.ownerUid == request.auth.uid; allow delete: if false; }
+    match /payments/{id} { allow read, write: if false; }
+    match /notifications/{id} { allow read, update: if signedIn() && resource.data.ownerUid == request.auth.uid; allow create, delete: if false; }
+    match /reviews/{id} { allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid; allow read: if true; allow update, delete: if false; }
+    match /services/{id} { allow read: if true; allow write: if false; }
+    match /service_centres/{id} { allow read: if true; allow write: if false; }
+    match /coupons/{id} { allow read: if true; allow write: if false; }
+    match /offers/{id} { allow read: if true; allow write: if false; }
+    match /service_history/{id} { allow read: if signedIn() && resource.data.ownerUid == request.auth.uid; allow write: if false; }
+    match /admins/{uid} { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

@@ -1,0 +1,1 @@
+PWA manifest and service worker are in the public directory created during setup.
